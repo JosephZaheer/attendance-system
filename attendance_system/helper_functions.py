@@ -1,132 +1,127 @@
 from pathlib import Path
 import pandas as pd
 import numpy as np
-import cv2 as cv
 import time
+import cv2
 import csv
 import sys
 
-month_names = ["January", "February", "March", "April", "May", "June",
-"July", "August", "September", "October", "November", "December"]
-
-################################################################################
-
-def delay_print(s = "", t = 0.06):
-    for c in s:
-        sys.stdout.write(c)
-        sys.stdout.flush()
-        time.sleep(t)
+month_names = ["January", "February", "March", "April", "May", "June", 
+               "July", "August", "September", "October", "November", "December"]
         
 ################################################################################
 
-def camera_capture(name="", register=False):
+def camera_capture(name="", register=False, camera_index=0, max_frames=300, rescale=0.5):
     
-    capture = cv.VideoCapture("Man1.mp4")
+    capture = cv2.VideoCapture(camera_index)
     no_of_frames = 0
-    rescale_factor = 0.75
     
-    haar_cascade = cv.CascadeClassifier("haarcascade_frontalface_default.xml")
+    haar_cascade = cv2.CascadeClassifier("haarcascade_frontalface_default.xml")
     
     while True:
-        is_true, frame = capture.read()
+        frame_taken, frame = capture.read()
         
-        if not is_true or no_of_frames >= 300 or cv.waitKey(0.1) or 0xFF == ord("q"):
-            break
+        #if not is_true or no_of_frames >= max_frames or cv.waitKey(0.1) or 0xFF == ord("q"):
         
         no_of_frames += 1
-        new_res = (
-        int(frame.shape[1]*rescale_factor), 
-        int(frame.shape[0]*rescale_factor))
+
+        height = frame.shape[0]
+        width = frame.shape[1]
+        new_res = (int(width*rescale), int(height*rescale))
         
-        frame = cv.resize(frame, new_res, interpolation=cv.INTER_AREA)
-        blurred = cv.GaussianBlur(frame, (1,1), cv.BORDER_DEFAULT)
-        grey = cv.cvtColor(blurred, cv.COLOR_BGR2GRAY)
-        
-        face_rect = haar_cascade.detectMultiScale(grey, scaleFactor=1.1, minNeighbors=10)
-        face = face_rect[0]
-        
-        x, y, w, h = face
+        resized = cv2.resize(frame, new_res, interpolation=cv2.INTER_AREA)
+        blurred = cv2.GaussianBlur(resized, (1,1), cv2.BORDER_DEFAULT)
+        grey = cv2.cvtColor(blurred, cv2.COLOR_BGR2GRAY)
+
+        #face_rect = face rectangle
+        face_rects = haar_cascade.detectMultiScale(grey, scaleFactor=1.1, minNeighbors=10)
+
+        #there many be multiple faces detected, we will only keep one (at index 0)
+        face_rect = face_rects[0]
+        x, y, w, h = face_rect
         cropped = grey[y:y+h, x:x+w]
             
         if register:
-            cv.imwrite(f"/dataset/{name}/Image{no_of_frames}.png", cropped)
+            cv2.imwrite(f"/dataset/{name}/Image{no_of_frames}.png", cropped)
             
         else:
-            cv.imwrite(f"/attendance/Image{no_of_frames}.png", cropped)
+            cv2.imwrite(f"/attendance/Image{no_of_frames}.png", cropped)
         
     capture.release()
-    cv.destroyAllWindows()
+    cv2.destroyAllWindows()
+
+    return None
     
 ################################################################################
     
-def mark_attendance():
-    
-    camera_capture()
-    #somehow import model
-
-    prediction = model.predict(frames)
-#prediction is a number. map to roll number
-
-#use prediction to mark attendance
+def mark_attendance(prediction):
 
     date, month, year = time.strftime("%d %B %Y").split()
+    filepath = f"/attendance_{year}/attendance_{month}.csv"
 
-    filepath = Path(f"/attendance_{year}/attendance_{month}.csv")
+    try:
+        attendance_register = pd.read_csv(filepath)
 
-    if not filepath.exists():
-        with open(filepath, "w") as f:
-        
-            names = pd.read_csv("student_names.csv")
-            names_list = list(names["names"])
-        
-            writer = csv.writer(f)
-            writer.writerow(["roll", "names"])
-        
-            for i in names.index:
-                writer.writerow([i+1, names_list[i]])
-    
-    attendance_register = pd.read_csv(filepath)
+    except FileNotFoundError:
+        attendance_register = pd.read_csv("attendance_system/sample_register.csv")
     
     if not date in attendance_register.columns:
         attendance_register.loc[:, date] = "A"
     
-    attendance_register.loc[prediction, date] = "P"
-
-    attendance_register.to_csv(path)
+    attendance_register.loc[prediction, date] = "P"            
+    attendance_register.to_csv(filepath, index=False)
     
 ################################################################################
 
 def view_attendance(when):
-    if len(when) == 1 and when[0] == "0":
+    if "".join(when) == "0": 
         return 0
-                
-    elif len(when) == 3 and (when[0]+when[2]).isdigit() and when[1].title() in month_names:
-        date, month, year = when[0], when[1].title(), when[2]
-                
-    elif len(when) == 2 and when[0].title() in month_names and when[1].isdigit():
-        month, year = when[0].title(), when[1]
+
+    elif len(when) == 3:
+        valid_date = when[0].isdigit() 
+        valid_month = when[1].title() in month_names
+        valid_year = when[0].isdigit()
+
+        if valid_date and valid_month and valid_year:
+            date, month, year = when[0], when[1].title(), when[2]
+
+        else:
+            print("Invalid Input")
+            return None
+
+    elif len(when) == 2:
+        valid_month = when[0].title() in month_names
+        valid_year = when[1].isdigit()
+
+        if valid_month and valid_year:
+            month, year = when[0].title(), when[1]
+
+        else:
+            print("Invalid Input")
+            return None
                 
     else:
         print("Invalid Input")
         return 0
             
-    delay_print("...", 0.35)
+    fancy_print("...", 0.35)
     print("\n")
                 
-            #filepath = f"/attendance_{year}/attendance_{month}.csv"
-    filepath = f"attendance_{month}.csv"
+    #filepath = f"/attendance_{year}/attendance_{month}.csv"
+    filepath = f"/workspaces/attendance-system/attendance_system/attendance_{month}.csv"
                 
     try:
         attendance_register = pd.read_csv(filepath)
-                
-        if len(when) == 3:
-            print(attendance_register.loc[:, ("roll", "names", date)])
-                    
-        else:
-            print(attendance_register)
-            
+                            
     except FileNotFoundError:
         print(f"No records available for {month} {year}")
+        return None
+
+    if len(when) == 3:
+        print(attendance_register.loc[:, ("roll", "names", date)])
+
+    else:
+        print(attendance_register)
         
 ################################################################################
                 
@@ -260,3 +255,24 @@ def fancy_intro():
     
 ################################################################################
    
+animations = {
+    "dots": ("...", 0.5),
+    "bar":  ("============", 0.3),
+    "fill": ("████████████", 0.3),
+    "empty": ("       ", 0.2)
+}
+
+def load_animation(indicator="dots", newline=True):
+
+    print()
+    s, time_per_char = animations[indicator]
+    print("[", end="")
+
+    for char in s:
+        sys.stdout.write(char)
+        sys.stdout.flush()
+        time.sleep(time_per_char)
+
+    print("]", end="\n" if newline else "")
+
+################################################################################

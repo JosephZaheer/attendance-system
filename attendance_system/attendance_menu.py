@@ -1,74 +1,113 @@
-from helper_functions import delay_print
-import helper_functions
+import helper_functions as hf
 import pandas as pd
 import time
 import csv
-import sys
-
-helper_functions.fancy_intro()
 
 while True:
-    print(); delay_print("    ")
-    print("0. Back / Exit program"); delay_print("    ")
-    print("1. Mark attendance"); delay_print("    ")
-    print("2. View attendance register"); delay_print("    ")
-    print("3. Find attendance percentage"); delay_print("    ")
-    print("4. Register student"); delay_print("    ")
-    print("5. Remove student"); delay_print("    ")
+    print("|——————————————————————————————————————|")
+    print("|        AI ATTENDANCE SYSTEM          |")
+    print("|——————————————————————————————————————|")
+    print("|    0. Back / Exit Program            |")
+    print("|    1. Mark Attendance                |")
+    print("|    2. View Attendacnce Register      |")
+    print("|    3. Show total Attendance          |")
+    print("|    4. Register Student               |")
+    print("|    5. Remove Student                 |")
+    print("|——————————————————————————————————————|")
+
+    option = input("Choose option: ").strip()
+    hf.load_animation()
     print()
     
-    choice = input("choice: ").strip()
-    print()
-    
-    match (choice):
-        
+    match (option):
         case "0":
-            delay_print("...", 0.35)
-            print("Program closed")
+            print("|——————————————————————————————————————|")
+            print("|           Program Closed             |")
+            print("|——————————————————————————————————————|")
+
             break
         
-        case "1":
-            helper_functions.mark_attendence()
+        case "1": #mark student attendance
+            pass
+            #data = hf.camera_capture()
+            #prediction = model.predict(data)
+            #hf.mark_attendence(prediction)
             
-        case "2":
-            print("Enter (date month year) or (month year): ", end="")
-            when = input().strip("( )").split()
+        case "2": #view attendance register for a specific date or month
+            when = input("Enter (date month year) or (month year): ")
+            when = when.strip("( )").split()
+
+            hf.load_animation()
+
+            hf.view_attendance(when)
             
-            helper_functions.view_attendance(when)
-            
-        case "3":
+        case "3": #view total of attendance and percentage
+
             #TODO: what happens when a student is removed mid year
             #csv files will be of different no. of rows
             
-            print("Enter (month year) or (year) or (month-month year): ", end="")
-            when = input().strip("( )").replace("-", " ").split()
-            
-            helper_functions.attendance_perc(when)
+            when = input("Enter (month year) or (year) or (month-month-year): ")
+            when = when.strip("( )").split()
+
+            hf.load_animation()
+            hf.attendance_perc(when)
                 
-        case "4":
-            name = input("Enter name: ")
-            roll = int(input("Enter roll no.: "))
+        case "4": #register a student
+            name = input("Enter name: ").title().strip()
+            roll = input("Enter roll no.: ").strip()
+
+            hf.load_animation(newline=False)
             
-            names = pd.read_csv("student_names.csv")
+            names_register = pd.read_csv("attendance_system/sample_register.csv")
+
+            #might give syntax error or logical error >>>
+            if (roll, name) in names_register:
+                print("Student is already registered!")
+                continue
+
+            valid_name = name.replace(" ", "").isalpha()
+            valid_roll = roll.isdigit()
+
+            if valid_name and valid_roll:
+                names_list = list(names_register["names"])
+
+                #roll = index + 1
+                names_list.insert(int(roll)-1, name)
             
-            if name not in names:
-                names_list = list(names["names"])
-                names_list.insert(roll-1, name)
-            
-                with open("student_names.csv", "w") as f:
-                    writer = csv.writer(f)
-                    writer.writerow(["roll", "names"])
+                with open("attendance_system/sample_register.csv", "w") as file:
+                    writer = csv.writer(file)
+                    writer.writerow(["roll", "name"])
                     
-                    for idx, name in enumerate(names_list):
-                        writer.writerow([idx+1, name])
+                    for index, name in enumerate(names_list):
+                        writer.writerow([index+1, name.title()])
+
+            else:
+                print(f"Invalid Input: {valid_name=} {valid_roll=}")
                         
-            helper_functions.camera_capture(name, True)
+            hf.camera_capture(name, True)
+            print("Student registered!")
             
-        case "5":
+        case "5": #remove a student
             name_or_roll = input("Enter student name or roll no.: ")
             name_or_roll = name_or_roll.strip().title()
+
+            hf.load_animation()
+            print("WARNING\n")
+            print(f"Delete student record for {name=} {roll=}?\n")
+            print("[Y] Yes\n[N] No")
+
+            deletion_choice = input().strip()
+
+            if deletion_choice.upper() == "Y":
+                print()
+                hf.load_animation("bar")
+                hf.remove_student(name_or_roll)
             
-            helper_functions.remove_student(name_or_roll)
+            elif deletion_choice.upper() == "N":
+                print("Deletion cancelled")
+
+            else:
+                print("Invalid input, cancelled deletion")
             
-        case _:
+        case _: 
             print("Invalid Input")
