@@ -1,0 +1,9 @@
+{
+    "workbench.colorTheme": "Visual Studio Dark",
+    "chat.agent.maxRequests": 10,
+    "editor.defaultFormatter": "ms-python.debugpy",
+    "editor.fontSize": 14,
+    "editor.screenReaderAnnounceInlineSuggestion": false,
+    "github.copilot.chat.languageContext.typescript.enabled": false,
+    "github.copilot.chat.newWorkspaceCreation.enabled": false
+}
