@@ -1,4 +1,4 @@
-def box_print(lines, title="", strip=True):
+def box_print(lines, title="", s=4, strip=True):
     import math
     
     lines = list(lines)
@@ -17,38 +17,36 @@ def box_print(lines, title="", strip=True):
     else:
         width = longest
             
-    bars = width + 8
+    bars = width + s*2
     
     print("|", "—"*bars, "|", sep="")
     
-    if title != "":
-        
+    if title != "":      
         if strip:
             title = title.strip()
             
-        x = (width - len(title))/2
+        x = (width - len(title) + s*2)/2
         lspace = math.ceil(x)
         rspace = math.floor(x)
         
-        print("|    ", end="")
-        print(" "*lspace + title + " "*rspace, sep="", end="")
-        print("    |")
+        print("|", end="")
+        print(" "*lspace, title, " "*rspace, sep = "", end="")
+        print("|")
         print("|", "—"*bars, "|", sep="")
         
-    for line in lines:
-        
+    for line in lines:       
         if strip:
             line = line.strip()
             
         xl = (width - longest)/2
-        lspace = math.ceil(xl)
+        lspace = math.ceil(xl) + s
         
         xr = width - len(line) - xl
-        rspace = math.floor(xr)
+        rspace = math.floor(xr) + s
         
-        print("|    ", end="")
+        print("|", end="")
         print(" "*lspace + line + " "*rspace, sep="", end="")
-        print("    |")
+        print("|")
         
     print("|", "—"*bars, "|", sep="")
 
@@ -76,13 +74,10 @@ def box_print2D(lines, title="", s=4, strip=True):
     title_longer = len(title) > bars
 
     if title_longer:
-        padding = (len(title) - bars)/2
+        padding = (len(title) - bars + 4)/4
         lpad = math.ceil(padding)
         rpad = math.floor(padding)
-
-        bars = len(title)
-
-    s = " "*s
+        bars = len(title) + 4
     
     if title != "":
         print("|", "—"*bars, "|", sep="")
@@ -90,10 +85,10 @@ def box_print2D(lines, title="", s=4, strip=True):
         if strip:
             title = title.strip()
 
-        x = (sum(width) + lines.shape[1] - 1 - len(title) + len(s)*2*lines.shape[1])/2
+        x = (sum(width) + lines.shape[1] - 1 - len(title) + s*2*lines.shape[1])/2
 
         if title_longer:
-            x = 0
+            x = 2
 
         lspace = math.ceil(x)
         rspace = math.floor(x)
@@ -108,31 +103,27 @@ def box_print2D(lines, title="", s=4, strip=True):
             
             if strip:
                 line = line.strip()
-            
-            xl = (width[j] - longest[j])/2
-            lspace = math.ceil(xl)
-        
-            xr = width[j] - len(line) - xl
-            rspace = math.floor(xr)
-            
-            print("|", s, sep="", end="")
 
-            if title_longer and j == 1:
+            xr = width[j] - len(line)
+            lspace = s
+            rspace = math.floor(xr) + s
+            
+            print("|", end="")
+
+            if title_longer and j < 2: #do no pad not dates
                 print(" "*lpad, end="")
 
-            print(" "*lspace + line + " "*rspace, sep="", end="")
+            print(" "*lspace, line, " "*rspace, sep="", end="")
 
-            if title_longer and j == 1:
+            if title_longer and j < 2:
                 print(" "*rpad, end="")
             
-            print(s, end="")
             if j + 1 == lines.shape[1]:
                 print("|")
                 
-        for idx, k in enumerate(width):
-            
-            if 0 < idx < len(width):
-                if i + 1 != lines.shape[0]:
+        for idx, k in enumerate(width):      
+            if 0 < idx < len(width): #do not put '+' on corners
+                if i + 1 != lines.shape[0]: #do not put '+' on bottom line
                     print("+", end="")
                     
                 else:
@@ -141,10 +132,10 @@ def box_print2D(lines, title="", s=4, strip=True):
             else:
                 print("|", end="")
                 
-            if idx == 1:
-                print("—"*(k + 2*len(s) + lpad + rpad), sep="", end="")
+            if idx < 2: #padding
+                print("—"*(k + 2*s + lpad + rpad), end="")
 
             else:
-                print("—"*(k + 2*len(s)), sep="", end="")
+                print("—"*(k + 2*s), end="")
 
         print("|")

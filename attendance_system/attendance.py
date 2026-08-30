@@ -56,6 +56,8 @@ class FaceRecognition:
 
     def mark_attendance(self):
         date, month, year = time.strftime("%d %B %Y").split()
+        date = "0" + date
+
         filepath = f"attendance_system/attendance_dataset/attendance_{year}/attendance_{month}.csv"
 
         try:
@@ -76,34 +78,17 @@ class FaceRecognition:
 
 def view_attendance(when):
 
-    #Check is input is valid :-
+    #Check if input is valid :-
     #1. Follows correct format (date month year) or (month year)
     #2. Date and year are number, month is a real month
 
-    if len(when) == 3:
-        valid_date = when[0].isdigit() 
-        valid_month = when[1].title() in month_names
-        valid_year = when[0].isdigit()
+    if len(when) == 3 and when[0].isdigit() and (when[1].title() in month_names) and when[2].isdigit():
+        format = "date month year"
+        date, month, year = "0" + when[0], when[1].title(), when[2]
 
-        if valid_date and valid_month and valid_year:
-            format = "date month year"
-            date, month, year = when[0], when[1].title(), when[2]
-
-        else:
-            print("Invalid Input")
-            return None
-
-    elif len(when) == 2:
+    elif len(when) == 2 and (when[0].title() in month_names) and when[1].isdigit():
         format = "month year"
-        valid_month = when[0].title() in month_names
-        valid_year = when[1].isdigit()
-
-        if valid_month and valid_year:
-            month, year = when[0].title(), when[1]
-
-        else:
-            print("Invalid Input")
-            return None
+        month, year = when[0].title(), when[1]
                 
     else:
         print("Invalid Input")
@@ -119,11 +104,11 @@ def view_attendance(when):
         return None
 
     if format == "date month year":
-        columns = ["roll", "name", date]
-
         if not str(date) in attendance_register.columns:
             print(f"Attendance not availabe for this {date=}")
             return None
+
+        columns = ["roll", "name", date]
 
     else:
         columns = list(attendance_register.columns)
@@ -132,6 +117,8 @@ def view_attendance(when):
     for idx in attendance_register.index:
             if format == "month year":
                 line = list(attendance_register.loc[idx])
+                line[0] = "  " + str(line[0]) + "  "
+                line[1] = "  " + line[1] + "  "
 
             else:
                 line = list(attendance_register.loc[idx, ("roll", "name", date)])
@@ -148,28 +135,13 @@ def attendance_perc(when):
     #1. Follows correct format (month-month year) or (month year) or (year)
     #2. Date and year are number, month is a real month
 
-    if len(when) == 3:
-        valid_month1 = when[0].title() in month_names
-        valid_month2 = when[1].title() in month_names
-        valid_year = when[2].isdigit()
-
-        if not (valid_month1 and valid_month2 and valid_year):
-            print("Invalid Input")
-            return None
-                
+    if len(when) == 3 and (when[0].title() in month_names) and (when[1].title() in month_names) and when[2].isdigit():
         year = when[2]                
         start = month_names.index(when[0].title())
         stop = month_names.index(when[1].title()) + 1
         months_list = [month for month in month_names[start:stop]]
                                 
-    elif len(when) == 2:
-        valid_month = when[0].title() in month_names
-        valid_year = when[1].isdigit()
-
-        if not (valid_month and valid_year):
-            print("Invalid Input")
-            return None
-
+    elif len(when) == 2 and when[0].title() in month_names and when[1].isdigit():
         year = when[1]
         months_list = [when[0].title()]
             
@@ -218,17 +190,12 @@ def remove_student(name_or_roll):
     names = pd.read_csv("attendance_system/sample_register.csv")
         
     #Check if input is a name or a roll
-    is_roll = name_or_roll.isdigit()
-    is_name = name_or_roll.replace(" ", "").isalpha()
-
-    if is_roll:
+    if name_or_roll.isdigit():
         name_or_roll = int(name_or_roll)
-        index_remove = list(
-        names[names["roll"]==name_or_roll].index)[0]
+        index_remove = list(names[names["roll"]==name_or_roll].index)[0]
                 
-    elif is_name:                
-        index_remove = list(
-        names[names["name"]==name_or_roll].index)[0]
+    elif name_or_roll.replace(" ", "").isalpha():                
+        index_remove = list(names[names["name"]==name_or_roll].index)[0]
                 
     else:
         print("Invalid Input")

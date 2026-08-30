@@ -59,23 +59,19 @@ while True:
         if "0" in (input_name, input_roll):
             continue
 
-        names_register = pd.read_csv("attendance_system/sample_register.csv")
-
-        for idx, name in enumerate(names_register["name"]):
-            if idx + 1 == input_roll and input_name == name:
-                print("Student is already registered!")
-                continue
-
-        valid_name = input_name.replace(" ", "").isalpha()
-        valid_roll = input_roll.isdigit()
-        
-        if not (valid_name and valid_roll):
-            print(f"Invalid Input: {valid_name=} {valid_roll=}")
+        #check if name and roll are valid
+        if not (input_name.replace(" ", "").isalpha() and input_roll.isdigit()):
+            print("Invalid Input")
             continue
 
+        names_register = pd.read_csv("attendance_system/sample_register.csv")
         names_list = list(names_register["name"])
 
         #roll = index + 1
+        if input_name == names_list[int(input_roll) - 1]:
+            print("Student already registered!")
+            continue
+
         names_list.insert(int(input_roll)-1, input_name)
             
         with open("attendance_system/sample_register.csv", "w") as file:
@@ -91,8 +87,7 @@ while True:
         print("Student registered!")
             
     elif option == "5": #remove a student
-        name_or_roll = input("Enter student name or roll no.: ")
-        name_or_roll = name_or_roll.strip().title()
+        name_or_roll = input("Enter student name or roll no.: ").strip().title()
 
         if name_or_roll == "0":
             continue
@@ -102,14 +97,13 @@ while True:
         print("[Y] Yes\n[N] No")
 
         Y_or_N = input().strip().upper()
+        print()
 
         if Y_or_N == "Y":
-            print()
             attendance.remove_student(name_or_roll)
             print("Student removed")
             
         else:
-            print()
             print("Deletion cancelled")
             
     else: 
