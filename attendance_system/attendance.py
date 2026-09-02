@@ -10,49 +10,50 @@ month_names = ["January", "February", "March", "April", "May", "June",
 
 class FaceRecognition:
 
-    def __init__(self, model):
-        self.model = model
-
-    def face_detection(self, image):
-        haar_cascade = cv2.CascadeClassifier("attendance_system/haarcascade_frontalface_default.xml")
-        faces_detected = haar_cascade.detectMultiScale(image, scaleFactor=1.1, minNeighbors=10)
-
-        #there many be multiple faces detected, we will only keep one (at index 0)
-        #haar cascade gives four points, which when connected, form a rectangle enclosing the face
-        face_rectangle = faces_detected[0]
-        x, y, w, h = face_rectangle
-
-        return image[y:y+h, x:x+w]
+    def __init__(self):
+        pass
+        #self.model = model
 
     def camera_capture(self, camera_index=0, max_frames=300, res=(224, 224)):
-
+        haar_cascade = cv2.CascadeClassifier("attendance_system/haarcascade_frontalface_default.xml")
         capture = cv2.VideoCapture(camera_index)
         self.frames = []
         
         while True:
-            read_successful, frame = capture.read()
+            success, frame = capture.read()
 
-            if not read_successful:
+            if not success:
                 print("Could not read from camera")
                 break
                 
             if len(self.frames) >= max_frames:
                 break
 
-            resized = cv2.resize(frame, res, interpolation=cv2.INTER_AREA)
-            blurred = cv2.GaussianBlur(resized, (1,1), cv2.BORDER_DEFAULT)
+            blurred = cv2.GaussianBlur(frame, (1,1), cv2.BORDER_DEFAULT)
             grey = cv2.cvtColor(blurred, cv2.COLOR_BGR2GRAY)
 
-            cropped = self.face_detection(grey)
-            self.frames.append(cropped)        
+            #there many be multiple faces detected, we will only keep one (at index 0)
+            #haar cascade gives four points, which when connected, form a rectangle enclosing the face
+
+            faces_detected = haar_cascade.detectMultiScale(grey, scaleFactor=1.1, minNeighbors=10)
+            try:
+                face_rectangle = faces_detected[0]
+                x, y, w, h = face_rectangle
+                cropped = grey[y:y+h, x:x+w]
+                self.frames.append(cropped)        
+            
+            except Exception as e:
+                print(e)
+                pass
 
         capture.release()
-        cv2.destroyAllWindows()
+        try: cv2.destroyAllWindows()
+        except: pass
 
     def add_to_dataset(self, name):
         #or just train model here directly
         for idx, frame in enumerate(self.frames):
-            cv2.imwrite(f"attendance_system/training_dataset/{name}/Image{idx}.webp", frame)
+            cv2.imwrite(f"attendance_system/Dataset/{name}/train/Image{idx}.webp", frame)
 
     def mark_attendance(self):
         date, month, year = time.strftime("%d %B %Y").split()

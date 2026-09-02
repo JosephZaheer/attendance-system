@@ -5,7 +5,7 @@ import csv
 
 #the file "attendance_cnn_model.keras" does not exist yet
 #it will be created once model has been finished and trained on student dataset
-face_recognizer = attendance.FaceRecognition("attendance_cnn_model.keras")
+face_recognizer = attendance.FaceRecognition()
 
 title = "AI ATTENDANCE SYSTEM"
 options = [

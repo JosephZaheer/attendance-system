@@ -30,7 +30,7 @@ def box_print(lines, title="", s=4, strip=True):
         rspace = math.floor(x)
         
         print("|", end="")
-        print(" "*lspace, title, " "*rspace, sep = "", end="")
+        print(" "*lspace, title, " "*rspace, sep="", end="")
         print("|")
         print("|", "—"*bars, "|", sep="")
         
