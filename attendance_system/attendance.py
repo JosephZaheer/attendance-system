@@ -1,4 +1,5 @@
 #import tensorflow as tf
+import streamlit as st
 import pandas as pd
 import box_print
 import time
@@ -23,7 +24,7 @@ class FaceRecognition:
             success, frame = capture.read()
 
             if not success:
-                print("Could not read from camera")
+                st.write("Could not read from camera")
                 break
                 
             if len(self.frames) >= max_frames:
@@ -43,7 +44,7 @@ class FaceRecognition:
                 self.frames.append(cropped)        
             
             except Exception as e:
-                print(e)
+                st.write(e)
                 pass
 
         capture.release()
@@ -101,18 +102,21 @@ def view_attendance(when):
         attendance_register = pd.read_csv(filepath)
                             
     except FileNotFoundError:
-        print(f"No records available for {month} {year}")
+        st.write(f"No records available for {month} {year}")
         return None
 
     if format == "date month year":
         if not str(date) in attendance_register.columns:
-            print(f"Attendance not availabe for this {date=}")
+            st.write(f"Attendance not availabe for this {date=}")
             return None
 
         columns = ["roll", "name", date]
 
     else:
         columns = list(attendance_register.columns)
+
+    st.dataframe(attendance_register)
+    return None
         
     lines = []
     for idx in attendance_register.index:
@@ -127,7 +131,6 @@ def view_attendance(when):
             lines.append(line)
 
     lines.insert(0, columns)
-    box_print.box_print2D(lines, title=f" Attendance for {"-".join(when).title()} ", s=0, strip=False)
     print()                
 
 def attendance_perc(when):    
@@ -151,7 +154,7 @@ def attendance_perc(when):
         months_list = month_names
                     
     else:
-        print("Invalid Input")
+        st.write("Invalid Input")
         return None
                 
     total_sum = pd.read_csv("attendance_system/sample_register.csv")
@@ -172,6 +175,11 @@ def attendance_perc(when):
                     
         for column in attendance_register.columns[2:]:
             total_sum["sum"] += attendance_register[column]
+
+    st.dataframe(total_sum)
+
+    st.write(f"Working days = {working_days}\n")
+    return None
             
     #total_sum.loc[idx, "sum"] = "APAPPPAPAA..."
     #We can get total attendance for this student by counting number of 'P' (Present marking)
@@ -184,7 +192,7 @@ def attendance_perc(when):
 
     lines.insert(0, list(total_sum.columns))
     box_print.box_print2D(lines, title=f" Attendance Total for {"-".join(when).title()} ", s=2, strip=False)
-    print(f"Working days = {working_days}\n")
+    st.write(f"Working days = {working_days}\n")
                             
 def remove_student(name_or_roll):
         
@@ -199,7 +207,7 @@ def remove_student(name_or_roll):
         index_remove = list(names[names["name"]==name_or_roll].index)[0]
                 
     else:
-        print("Invalid Input")
+        st.write("Invalid Input")
         return None
                 
     file = open("attendance_system/sample_register.csv", "w")
