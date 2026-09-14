@@ -1,6 +1,5 @@
 numpy
 pandas
 tensorflow >= 2.2
-opencv
 csv
-
+streamlit

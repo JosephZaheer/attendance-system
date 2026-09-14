@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import attendance 
-import box_print
 import csv
 
 #the file "attendance_cnn_model.keras" does not exist yet
@@ -10,7 +9,6 @@ face_recognizer = attendance.FaceRecognition()
 
 st.title("AI ATTENDANCE SYSTEM")
 options = [
-
     "0. Back / Exit Program",
     "1. Mark Attendance",
     "2. View Attendance Register",
@@ -18,12 +16,10 @@ options = [
     "4. Register Student",
     "5. Remove Student"
 ]
-n = 0
 
 status = st.radio("Choose option: ", options)
 
-while n<5:
-    n+= 1
+while True:
     if status == options[0]:
         st.write("Program Closed")
         break
