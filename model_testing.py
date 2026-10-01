@@ -13,3 +13,4 @@ print("end")
 #model.train_model(32, 10)
 
 #model.loss_accuracy()
+streamlit run /workspaces/attendance-system/attendance_system/menu.py
