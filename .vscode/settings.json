@@ -5,8 +5,10 @@
     "editor.fontSize": 14,
     "editor.screenReaderAnnounceInlineSuggestion": false,
     "github.copilot.chat.languageContext.typescript.enabled": false,
+    "python.defaultInterpreterPath": "/home/codespace/.python/current/bin/python3",
     "github.copilot.chat.newWorkspaceCreation.enabled": false,
     "python.analysis.extraPaths": [
         "./attendance_system"
-    ]
+    ],
+    "python-envs.defaultEnvManager": "ms-python.python:system"
 }

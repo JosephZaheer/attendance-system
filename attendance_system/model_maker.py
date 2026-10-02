@@ -1,80 +1,38 @@
-from tensorflow.keras.layers import Conv2D, MaxPool2D, Flatten, Dense, BatchNormalization, Dropout, Rescaling # pyright: ignore[reportMissingModuleSource]
-import tensorflow_datasets as tfds
+from tensorflow.keras.layers import Conv2D, MaxPool2D, Flatten, Dense, BatchNormalization, Dropout
 import matplotlib.pyplot as plt
-from tensorflow import keras # pyright: ignore[reportMissingModuleSource]
+from tensorflow import keras
 import tensorflow as tf
 
 class ModelMaker:
     def __init__(self):
-        self.IMG_SIZE = 28
-        self.BATCH_SIZE = 32
+        pass
 
     def load_model(self, name):
         self.model = keras.models.load_model(f'{name}.keras')
 
-    def load_local_dataset(self, name, IMG_SIZE=224, BATCH_SIZE=32):
-
-        self.IMG_SIZE = IMG_SIZE
-        self.BATCH_SIZE = BATCH_SIZE
+    def load_local_dataset(self):
         self.train_ds = tf.keras.utils.image_dataset_from_directory(
-        name,
-        seed=123,
-        image_size=(IMG_SIZE, IMG_SIZE),
-        batch_size=BATCH_SIZE)
-    
-    def load_tf_dataset(self, name, IMG_SIZE=28, BATCH_SIZE=32):
-        self.IMG_SIZE = IMG_SIZE
-        self.BATCH_SIZE = BATCH_SIZE
-        
-        #Load dataset for training and testing
-        (self.train_ds, self.val_ds), self.ds_info = tfds.load(
-        
-            name,
-            split=["train[:15%]", "test[:5%]"],
-            shuffle_files=True,
-            as_supervised=True,
-            with_info=True
-        )
-        """
-        self.val_ds = tfds.load(
-            name,
-            as_supervised=True,
-            split=[val_split]
-        )
-        
-        self.test_ds = tfds.load(
-        
-            name,
-            as_supervised=True,
-            split=[test_split]
-        )
-        """
-        #preprocess the dataset for better accuracy and efficiency
-        def preprocess(image, label):
-            #image, label = feature["image"], feature["label"]
-            return tf.image.resize(image, (self.IMG_SIZE, self.IMG_SIZE))/255.0, label
-
-        self.train_ds = (self.train_ds
-        .map(preprocess, num_parallel_calls=tf.data.AUTOTUNE)
-        .cache()
-        .batch(self.BATCH_SIZE)
-        .shuffle(self.ds_info.splits["train"].num_examples)
-        .prefetch(tf.data.AUTOTUNE)
+        "/workspaces/attendance-system/attendance_system/Dataset/Train",
+        labels="inferred",
+        label_mode="int",
+        image_size=(128, 128),
+        batch_size=16,
+        shuffle=True
         )
 
-        
-        self.val_ds = (self.val_ds
-        .map(preprocess, num_parallel_calls=tf.data.AUTOTUNE)
-        .cache()
-        .batch(self.BATCH_SIZE)
-        .shuffle(self.ds_info.splits["test"].num_examples)
-        .prefetch(tf.data.AUTOTUNE)
-        )        
-        
-    def create_model(self, input_shape, learning_rate=0.005):
+        self.val_ds = tf.keras.utils.image_dataset_from_directory(
+        "/workspaces/attendance-system/attendance_system/Dataset/Test",
+        labels="inferred",
+        label_mode="int",
+        image_size=(128,128),
+        batch_size=16,
+        shuffle=False
+        )
+
+    def create_model(self):
         self.model = keras.Sequential([
                     
-            Conv2D(filters=16, kernel_size=3, strides=1, padding="same", activation="relu", input_shape=input_shape),
+            Conv2D(filters=16, kernel_size=3, strides=1, padding="same", activation="relu", input_shape=(128, 128, 3)),
             BatchNormalization(),
             MaxPool2D(pool_size=3, strides=1, padding="same"),
             
@@ -88,49 +46,44 @@ class ModelMaker:
             
             Flatten(),
             
-            Dense(units=1000, activation="relu"),
+            Dense(units=64, activation="relu"),
             BatchNormalization(),
         
             Dropout(rate=0.4),
-            Dense(units=100, activation="relu"),
+            Dense(units=32, activation="relu"),
             BatchNormalization(),
             
             Dropout(rate=0.4),
-            Dense(units=10, activation="sigmoid")
+            Dense(units=3, activation="sigmoid")
         ])
     
         self.model.summary()
         
         #defining how the model evaluates its inaccuracy and how it improves itself
         self.model.compile(
-        
-            optimizer=keras.optimizers.Adam(learning_rate=learning_rate),
+            optimizer="adam",
             loss="sparse_categorical_crossentropy",
             metrics=["accuracy"]
         )
         
-    def train_model(self, batch_size, epochs, patience=10):
+    def train_model(self, batch_size=16, epochs=15, patience=10):
         
         #define early stopping to avoid overfitting
         early_stop = keras.callbacks.EarlyStopping(
-        
             min_delta=0.005,
             patience=patience,
             restore_best_weights=True,
-            
             verbose=1
         )
     
         #train model on training dataset
         #test model on validation dataset
         self.history = self.model.fit(
-        
             self.train_ds,
             validation_data=self.val_ds,            
             epochs=epochs,
             batch_size=batch_size,
             callbacks=[early_stop],
-            
             verbose=1
         )
         
@@ -160,7 +113,6 @@ class ModelMaker:
         
         #evaluate model performance using test dataset
         #loss, accuracy = self.model.evaluate(self.test_ds)
-        
         #print(f"This model has {accuracy*100:.2f}% accuracy")
          
     def save_model(self, name):

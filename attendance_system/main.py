@@ -1,3 +1,4 @@
+import face_recognition as fr
 import streamlit as st
 import pandas as pd
 import csv
@@ -154,11 +155,9 @@ def remove_student(name_or_roll):
     writer = csv.writer(file)
     writer.writerow(["roll", "name"])
 
-    yes = st.button("Adjust roll numbers?") or False
-                
     removed = False
     for idx in names.index:
-        if idx == index_remove and yes:
+        if idx == index_remove:
             removed = True
             continue
                         
@@ -181,11 +180,13 @@ options = [
     "View Attendance Register",
     "View Total Attendance",
     "Register Student",
-    "Remove Student"]
+    "Remove Student"
+    ]
 
 status = st.radio("Choose an operation:", options, key="Options")
 
 if status == options[0]: #mark attendance
+    #fr.mark_attendance()
     pass
             
 elif status == options[1]: #view attendance register for a specific date or month
