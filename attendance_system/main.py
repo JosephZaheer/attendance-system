@@ -21,7 +21,8 @@ def view_attendance():
         st.write(f"No records available for {month} {year}")
         return None
 
-    date = st.text_input("Specify a date: ('all' for whole month)", "all").strip()
+    date = st.slider("Choose a date: (0 for whole month)", min_value=0, max_value=31, step=1)
+    date = str(date)
 
     if date.isdigit():
         if len(date) == 1 and date[0] != "0":
@@ -29,15 +30,17 @@ def view_attendance():
         elif len(date) > 1 and date[0] == "0":
             date = date.lstrip("0")
 
-    if date == "all":
+    if date == "0":
         columns = list(register.columns)
+        working_days = len(columns) - 2
+        st.write(f"Working days: {working_days}")
 
     else:
         if date in register.columns:
             columns = ["roll", "name", date]
 
         else:
-            st.write(f"Attendance not availabe for this date ==> {date}")
+            st.write(f"Attendance not availabe for this date: {date}")
             return None
 
     register = register[columns]
@@ -57,7 +60,9 @@ def percentage():
         start_month = st.selectbox("Select starting month:", month_names, key="month1")
         start = month_names.index(start_month)
 
-        stop_month = st.selectbox("Select ending month:", month_names, key="month2")
+        idx = month_names.index(start_month)
+
+        stop_month = st.selectbox("Select ending month:", month_names[idx: ], key="month2")
         stop = month_names.index(stop_month) + 1
 
         months_list = [month for month in month_names[start:stop]]
@@ -95,7 +100,7 @@ def percentage():
         sum_register.loc[idx, "sum"] = str(row.count("P"))
         sum_register.loc[idx, "%"] = f"{row.count('P') * 100 / working_days:.0f}%"
 
-    st.write(f"Working days = {working_days}")
+    st.write(f"Working days: {working_days}")
     st.dataframe(sum_register)
 
 def register_student(input_name, input_roll):
@@ -206,7 +211,7 @@ elif status == options[3]: #register a student
         register_student(name, roll)
 
 elif status == options[4]: #remove a student
-    name_or_roll = st.text_input("Enter student name or roll number:", key="Input05")
+    name_or_roll = st.text_input("Enter student name OR roll number:", key="Input05")
     name_or_roll = name_or_roll.strip().title()
 
     if name_or_roll:

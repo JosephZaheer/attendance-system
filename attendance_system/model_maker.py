@@ -1,4 +1,4 @@
-from tensorflow.keras.layers import Conv2D, MaxPool2D, Flatten, Dense, BatchNormalization, Dropout
+from tensorflow.keras.layers import Input, RandomContrast, RandomTranslation, Conv2D, MaxPool2D, Flatten, Dense, BatchNormalization, Dropout
 import matplotlib.pyplot as plt
 from tensorflow import keras
 import tensorflow as tf
@@ -31,19 +31,20 @@ class ModelMaker:
 
     def create_model(self):
         self.model = keras.Sequential([
+
+            Input(shape=(128, 128, 3)),
+
+            RandomContrast(factor=0.4),
+            RandomTranslation(height_factor=0.2, width_factor=0.2),
                     
-            Conv2D(filters=16, kernel_size=3, strides=1, padding="same", activation="relu", input_shape=(128, 128, 3)),
+            Conv2D(filters=16, kernel_size=3, strides=1, padding="same", activation="relu"),#, input_shape=(128, 128, 3)),
             BatchNormalization(),
             MaxPool2D(pool_size=3, strides=1, padding="same"),
             
             Conv2D(filters=22, kernel_size=1, strides=1, padding="same", activation="relu"),
             BatchNormalization(),
             MaxPool2D(pool_size=3, strides=2, padding="same"),
-            
-            Conv2D(filters=26, kernel_size=3, padding="same", activation="relu"),        
-            BatchNormalization(),
-            MaxPool2D(pool_size=3, strides=2, padding="same"),
-            
+                        
             Flatten(),
             
             Dense(units=64, activation="relu"),
@@ -54,7 +55,7 @@ class ModelMaker:
             BatchNormalization(),
             
             Dropout(rate=0.4),
-            Dense(units=3, activation="sigmoid")
+            Dense(units=5, activation="sigmoid")
         ])
     
         self.model.summary()
