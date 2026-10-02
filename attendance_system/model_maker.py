@@ -45,10 +45,7 @@ class ModelMaker:
             MaxPool2D(pool_size=3, strides=2, padding="same"),
             
             Flatten(),
-            
-            Dense(units=64, activation="relu"),
-            BatchNormalization(),
-        
+                    
             Dropout(rate=0.4),
             Dense(units=32, activation="relu"),
             BatchNormalization(),
