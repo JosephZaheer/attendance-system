@@ -186,8 +186,7 @@ options = [
 status = st.radio("Choose an operation:", options, key="Options")
 
 if status == options[0]: #mark attendance
-    #fr.mark_attendance()
-    pass
+    fr.mark_attendance()
             
 elif status == options[1]: #view attendance register for a specific date or month
     view_attendance()

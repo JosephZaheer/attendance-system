@@ -19,7 +19,7 @@ classes = model.train_ds.class_names
 
 
 import tensorflow as tf
-model = tf.keras.models.load_model("/workspaces/attendance-system/attendance_system/model1.keras")
+model = tf.keras.models.load_model("/workspaces/attendance-system/attendance_system/dummy_model_1.keras")
 #model.summary()
 
 img = tf.keras.utils.load_img(

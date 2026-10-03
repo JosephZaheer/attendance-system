@@ -1,9 +1,15 @@
-#import tensorflow as tf
+import tensorflow as tf
 import streamlit as st
 import pandas as pd
 import numpy as np
 import time
-import cv2
+#import cv2
+
+def read_img(filepath):
+    img = tf.keras.utils.load_img(filepath, target_size=(128,128))
+    img_array = tf.img_to_array(img, 0)
+    img_array = tf.expand_dims(img_array, 0)
+    return img_array
 
 def streamlit_camera():
     picture = st.camera_input("Take a photo")
@@ -16,6 +22,7 @@ def streamlit_camera():
     
     return None
 
+"""
 def camera_capture(camera_index=0, max_frames=300):        
     capture = cv2.VideoCapture(camera_index)
     count = 0
@@ -61,6 +68,7 @@ def preprocessing(image):
 
 def add_to_dataset(name, image, idx=0):
     cv2.imwrite(f"attendance_system/Dataset/{name}/train/Image{idx}.webp", image)
+"""
 
 def mark_attendance():
     date, month, year = time.strftime("%d %B %Y").split()
@@ -79,8 +87,15 @@ def mark_attendance():
     if not date in attendance_register.columns:
         attendance_register.loc[:, date] = "A"
 
-    #prediction = self.model.predict(self.frames)
-    #confidence = tf.nn.softmax(prediction)
+    model = tf.keras.models.load_model("/workspaces/attendance-system/attendance_system/model1.keras")
+    img_array = read_img("attendance_system/Zoheb.jpg")
+    predictions = model.predict(img_array)
+    score = tf.nn.softmax(predictions[0])
+
+    classes = ["Aryan", "Jaffar", "Zoheb"]
+    print("Prediction:", classes[np.argmax(score)])
+    print(f"Confidence: {100*np.max(score):.2f}%")
+
     #attendance_register.loc[prediction, date] = "P"            
     #attendance_register.to_csv(filepath, index=False)
     
