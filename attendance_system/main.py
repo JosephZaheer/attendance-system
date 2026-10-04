@@ -1,3 +1,4 @@
+from streamlit_image_select import image_select 
 import face_recognition as fr
 import streamlit as st
 import pandas as pd
@@ -8,10 +9,7 @@ month_names = ["January", "February", "March", "April", "May", "June",
 
 year_list = pd.read_json("attendance_system/year_list.json")
 
-def view_attendance():
-    month = st.selectbox("Select a month:", month_names)
-    year = st.selectbox("Select a year:", year_list)
-
+def view_attendance(month, year):
     filepath = f"attendance_system/attendance_dataset/attendance_{year}/attendance_{month}.csv"
 
     try:
@@ -21,15 +19,15 @@ def view_attendance():
         st.write(f"No records available for {month} {year}")
         return None
 
-    date = st.text_input("Specify a date: ('all' for whole month)", "all").strip()
+    date = st.slider("Specify a date: (0 for whole month)", min_value=0, max_value=31, step=1)
 
-    if date.isdigit():
-        if len(date) == 1 and date[0] != "0":
-            date = "0" + date
-        elif len(date) > 1 and date[0] == "0":
-            date = date.lstrip("0")
+    if date < 10:
+        date = "0" + str(date).strip(" 0")
 
-    if date == "all":
+    else:
+        date = str(date)
+
+    if date == "0":
         columns = list(register.columns)
 
     else:
@@ -37,7 +35,7 @@ def view_attendance():
             columns = ["roll", "name", date]
 
         else:
-            st.write(f"Attendance not availabe for this date ==> {date}")
+            st.write(f"Attendance not availabe for this date: {date}")
             return None
 
     register = register[columns]
@@ -47,7 +45,8 @@ def percentage():
     options = [
         "Range of months",
         "Whole year",
-        "One month"]
+        "One month"
+        ]
 
     choice = st.selectbox("Choose an option:", options)
 
@@ -57,7 +56,7 @@ def percentage():
         start_month = st.selectbox("Select starting month:", month_names, key="month1")
         start = month_names.index(start_month)
 
-        stop_month = st.selectbox("Select ending month:", month_names, key="month2")
+        stop_month = st.selectbox("Select ending month:", month_names[start:], key="month2")
         stop = month_names.index(stop_month) + 1
 
         months_list = [month for month in month_names[start:stop]]
@@ -69,8 +68,8 @@ def percentage():
         month = st.selectbox("Select a month:", month_names, key="month3")
         months_list = [month]
 
-    sum_register = pd.read_csv("attendance_system/sample_register.csv")
-    sum_register["sum"] = ""
+    students = pd.read_csv("attendance_system/sample_register.csv")
+    students["Total"] = ""
     working_days = 0
                 
     for month in months_list:
@@ -86,25 +85,25 @@ def percentage():
         working_days += len(register.columns) - 2
                     
         for column in register.columns[2:]:
-            sum_register["sum"] += register[column]
+            students["Total"] += register[column]
             
     #total_sum.loc[idx, "sum"] = "APAPPPAPAA..."
     #We can get total attendance for this student by counting number of 'P' (Present marking)
 
-    for idx, row in enumerate(sum_register["sum"]):
-        sum_register.loc[idx, "sum"] = str(row.count("P"))
-        sum_register.loc[idx, "%"] = f"{row.count('P') * 100 / working_days:.0f}%"
+    for idx, row in enumerate(students["Total"]):
+        students.loc[idx, "Total"] = str(row.count("P"))
+        students.loc[idx, "%"] = f"{row.count('P') * 100 / working_days:.0f}%"
 
-    st.write(f"Working days = {working_days}")
-    st.dataframe(sum_register)
+    st.write(f"Working days: {working_days}")
+    st.dataframe(students)
 
 def register_student(input_name, input_roll):
+    input_name = input_name.title().strip()
+
     #check if name and roll are valid
-
     valid_name = input_name.replace(" ", "").isalpha()
-    valid_roll = input_roll.isdigit()        
 
-    if not (valid_name and valid_roll):
+    if not valid_name:
             st.write("Invalid Input")
             return None
 
@@ -112,7 +111,7 @@ def register_student(input_name, input_roll):
     names_list = list(names_register["name"])
 
     #roll = index + 1
-    if input_roll in names_register["roll"] and input_name == names_list[int(input_roll) - 1]:
+    if input_roll in names_register["roll"] and input_name == names_list[input_roll - 1]:
         st.write("Student already registered!")
         return None
 
@@ -183,13 +182,30 @@ options = [
     "Remove Student"
     ]
 
+images = [
+
+    "/workspaces/attendance-system/attendance_system/Dataset/Train/Aryan/Zoheb16.jpg",
+    "/workspaces/attendance-system/attendance_system/Dataset/Train/Jaffar/Jaffar16.jpg",
+    "/workspaces/attendance-system/attendance_system/Dataset/Train/Zoheb/Zoheb12.jpg"]
+
 status = st.radio("Choose an operation:", options, key="Options")
 
 if status == options[0]: #mark attendance
-    fr.mark_attendance()
+    #student = image_select("Choose an image to classify: Aryan/Jaffar/Zoheb", images, captions=["Aryan", "Jaffar", "Zoheb"])
+
+    if  st.button("Mark Attendance"):
+        img = st.camera_input("Take a photo: ")
+
+        if img != None:
+            st.image(img)
+            fr.mark_attendance(img)
             
 elif status == options[1]: #view attendance register for a specific date or month
-    view_attendance()
+    month = st.selectbox("Select a month:", month_names)
+    year = st.selectbox("Select a year:", year_list)
+
+    if month and year:
+        view_attendance(month, year)
             
 elif status == options[2]: #view attendance total and percentage            
     percentage()
@@ -198,24 +214,18 @@ elif status == options[3]: #register a student
     name = st.text_input("Enter student name:", key="Input03")
     name = name.strip().title()
 
-    roll = st.text_input("Enter roll number:", key="Input04")
-    roll = roll.strip()
+    roll = st.slider("Enter roll number:", min_value=1, max_value=38, step=1, key="Input04")
 
-    if name and roll:
+
+    if name and roll and st.button("Register"):
         register_student(name, roll)
 
 elif status == options[4]: #remove a student
-    name_or_roll = st.text_input("Enter student name or roll number:", key="Input05")
+    name_or_roll = st.text_input("Enter student name OR roll number:", key="Input05")
     name_or_roll = name_or_roll.strip().title()
 
-    if name_or_roll:
-        st.write("WARNING")
-        Y_or_N = st.radio("Delete student record?", ("None", "No", "Yes"), key="Input06")
+    if name_or_roll and st.button("Delete"):
+        remove_student(name_or_roll)
 
-        if Y_or_N == "Yes":
-            remove_student(name_or_roll)
-
-        elif Y_or_N == "No":
-            st.write("Deletion cancelled")
 
             

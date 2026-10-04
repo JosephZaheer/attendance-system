@@ -3,14 +3,23 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import time
+
 #import cv2
 
-def read_img(filepath):
-    img = tf.keras.utils.load_img(filepath, target_size=(128,128))
-    img_array = tf.img_to_array(img, 0)
+def read_img(img):
+
+    st.write("hello")
+    filepath = "/workspaces/attendance-system/attendance_system/test.jpg"
+
+    with open(filepath, "wb") as f:
+        f.write(img.getbuffer(), f)
+
+    img = tf.keras.utils.load_img(filepath, target_size=(128, 128))
+    img_array = tf.keras.utils.img_to_array(img)
     img_array = tf.expand_dims(img_array, 0)
     return img_array
 
+"""
 def streamlit_camera():
     picture = st.camera_input("Take a photo")
 
@@ -22,7 +31,7 @@ def streamlit_camera():
     
     return None
 
-"""
+
 def camera_capture(camera_index=0, max_frames=300):        
     capture = cv2.VideoCapture(camera_index)
     count = 0
@@ -70,7 +79,7 @@ def add_to_dataset(name, image, idx=0):
     cv2.imwrite(f"attendance_system/Dataset/{name}/train/Image{idx}.webp", image)
 """
 
-def mark_attendance():
+def mark_attendance(img):
     date, month, year = time.strftime("%d %B %Y").split()
     
     if len(date) == 1:
@@ -79,23 +88,36 @@ def mark_attendance():
     filepath = f"attendance_system/attendance_dataset/attendance_{year}/attendance_{month}.csv"
 
     try:
-        attendance_register = pd.read_csv(filepath)
+        register = pd.read_csv(filepath)
 
     except FileNotFoundError:
-        attendance_register = pd.read_csv("attendance_system/sample_register.csv")
+        register = pd.read_csv("attendance_system/sample_register.csv")
     
-    if not date in attendance_register.columns:
-        attendance_register.loc[:, date] = "A"
+    if not date in register.columns:
+        register.loc[:, date] = "A"
 
     model = tf.keras.models.load_model("/workspaces/attendance-system/attendance_system/model1.keras")
-    img_array = read_img("attendance_system/Zoheb.jpg")
+
+    img_array = read_img(img)
+
     predictions = model.predict(img_array)
     score = tf.nn.softmax(predictions[0])
 
+    print(f"{predictions=}")
+    print(f"{score=}")
+
+    #classes = list(register["name"])
     classes = ["Aryan", "Jaffar", "Zoheb"]
-    print("Prediction:", classes[np.argmax(score)])
+    student = classes[np.argmax(score)]
+
+    print("Predicted Student:", student)
     print(f"Confidence: {100*np.max(score):.2f}%")
 
-    #attendance_register.loc[prediction, date] = "P"            
-    #attendance_register.to_csv(filepath, index=False)
+    student_rolls = [1, 3, 6]
+    idx = student_rolls[np.argmax(score)] - 1
+
+    register.loc[idx, date] = "P"            
+    register.to_csv(filepath, index=False)
+
+    st.dataframe(register)
     

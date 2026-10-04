@@ -21,3 +21,4 @@ print("end")
 
 
 python3 attendance_system/test.py
+streamlit run /workspaces/attendance-system/attendance_system/main.py
