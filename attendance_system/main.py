@@ -7,7 +7,7 @@ import csv
 month_names = ["January", "February", "March", "April", "May", "June",
                "July", "August", "September", "October", "November", "December"]
 
-register_path = "sample_register.csv"
+register_path = "/mount/src/attendance-system/attendance_system/sample_register.csv"
 
 with open("/mount/src/attendance-system/attendance_system/years.dat", "rb") as f:
     year_list = pickle.load(f)
