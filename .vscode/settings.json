@@ -7,5 +7,6 @@
         "markdown": true,
         "javascript": true,
         "python": false
-    }
+    },
+    "python.analysis.typeCheckingMode": "off"
 }

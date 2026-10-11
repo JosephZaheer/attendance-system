@@ -1,65 +1,77 @@
 from tensorflow.keras import layers
 import matplotlib.pyplot as plt
-from tensorflow import keras
 import tensorflow as tf
+
+base = "/workspaces/attendance-system/attendance_system/"
 
 class ModelMaker:
     def __init__(self):
         pass
 
     def load_model(self, name):
-        self.model = keras.models.load_model(f'{name}.keras')
+        self.model = tf.keras.models.load_model(base + f'{name}.keras')
 
-    def load_local_dataset(self, img_size=(128, 128)):
+    def load_local_dataset(self, img_size=(224, 224)):
         self.train_ds = tf.keras.utils.image_dataset_from_directory(
-        "/workspaces/attendance-system/attendance_system/Dataset/Train",
+        base + "Dataset/Train",
         labels="inferred",
         label_mode="int",
         image_size=img_size,
-        batch_size=16,
-        shuffle=True
-        )
+        batch_size=32,
+        ).cache().shuffle(1000).prefetch(buffer_size=tf.data.AUTOTUNE)
 
         self.val_ds = tf.keras.utils.image_dataset_from_directory(
-        "/workspaces/attendance-system/attendance_system/Dataset/Test",
+        base + "Dataset/Test",
         labels="inferred",
         label_mode="int",
         image_size=img_size,
-        batch_size=16,
+        batch_size=32,
+        ).cache().prefetch(buffer_size=tf.data.AUTOTUNE)
+        
+        """self.test_ds = tf.keras.utils.image_dataset_from_directory(
+        base + "Dataset/Evaluate",
+        labels="inferred",
+        label_mode="int",
+        image_size=img_size,
+        batch_size=6,
         shuffle=False
-        )
+        )"""
 
-    def transfer_learning(self, img_size=(128, 128, 3)):
-        self.base = tf.keras.applications.EfficientNetV2B3(
-            include_top=True,
-            weights='imagenet',
-            input_shape=img_size
-        )
-
-        self.base.trainable = False
-
-    def create_model(self, output, img_size=(128, 128, 3), optimizer="adam", loss="sparse_categorical_crossentropy", metrics=["accuracy"]):
-        self.model = keras.Sequential([
+    def create_model(self, output, img_size=(224, 224, 3), optimizer="adam", loss="sparse_categorical_crossentropy", metrics=["accuracy"]):
+        
+        self.model = tf.keras.Sequential([
 
             layers.Input(shape=img_size),
-            layers.Rescaling(1./255),
-                                
-            layers.Conv2D(filters=16, kernel_size=3, padding="same", activation="relu"),
-            layers.BatchNormalization(),
-            layers.MaxPool2D(pool_size=2, strides=2),
-        
-            layers.Conv2D(filters=32, kernel_size=3, padding="same", activation="relu"),
-            layers.BatchNormalization(),
-            layers.MaxPool2D(pool_size=2, strides=2),
+            #layers.Rescaling(1/255.0),
             
-            layers.Conv2D(filters=48, kernel_size=3, padding="same", activation="relu"),        
+            #data augmentation
+            layers.RandomContrast(factor=0.1),
+                                
+            #1st convolutional layer
+            layers.Conv2D(filters=32, kernel_size=3, strides=1, activation="relu"),
+            layers.MaxPool2D(pool_size=2, padding="same"),
             layers.BatchNormalization(),
-            layers.MaxPool2D(pool_size=2, strides=2),
+        
+            #2nd convolutional layer
+            layers.Conv2D(filters=32, kernel_size=3, strides=1, activation="relu"),
+            layers.MaxPool2D(pool_size=2, padding="same"),
+            layers.BatchNormalization(),
+            
+            #3rd convolutional layer
+            layers.Conv2D(filters=48, kernel_size=3, strides=1, activation="relu"),        
+            layers.MaxPool2D(pool_size=2, padding="same"),
+            layers.BatchNormalization(),
+            
+            #4th convolutional layer
+            layers.Conv2D(filters=48, kernel_size=1, strides=1, activation="relu"),
+            layers.BatchNormalization(),
             
             layers.Flatten(),
+            layers.Dropout(rate=0.1),
             
-            layers.Dense(units=125, activation="relu"),
-            layers.BatchNormalization(),
+            #dense layers
+            layers.Dense(units=128, activation="relu"),
+            layers.Dense(units=128, activation="relu"),
             
             layers.Dense(units=output, activation="softmax")
         ])
@@ -72,24 +84,32 @@ class ModelMaker:
             metrics=metrics
         )
         
-    def train_model(self, batch_size=16, epochs=20, patience=10):
-        early_stop = keras.callbacks.EarlyStopping(
-            min_delta=0.005,
+    def train_model(self, min_delta=0.0005,batch_size=32, epochs=32, patience=8):
+        
+        early_stopping = tf.keras.callbacks.EarlyStopping(
+            monitor="val_loss",
+            min_delta=min_delta,
             patience=patience,
             restore_best_weights=True,
             verbose=1
         )
+        
+        logger = tf.keras.callbacks.CSVLogger(
+            base + "logs.csv", 
+            separator=",",
+            append=False
+        )
     
         self.history = self.model.fit(
             self.train_ds,
-            validation_data=self.val_ds,            
+            validation_data=self.val_ds,
             epochs=epochs,
             batch_size=batch_size,
-            callbacks=[early_stop],
+            callbacks=[early_stopping, logger],
             verbose=1
         )
         
-    def loss_accuracy(self):
+        #model evaluation through data visualisation
         figure, axes = plt.subplots(1,2)
         
         axes[0].plot(self.history.history["loss"], label="Training Loss")
@@ -110,7 +130,21 @@ class ModelMaker:
         
         plt.tight_layout()
         plt.show()
-        plt.savefig("model_loss_accuracy.png")
-         
-    def save_model(self, name):
-        self.model.save(f"/workspaces/attendance-system/attendance_system/{name}.keras")
+        plt.savefig(base + "model_loss_accuracy.png")
+        
+        #evaluation
+        test_labels = ["Arush", "Aryan", "Jaffar", "Krishna", "Yusuf", "Zoheb"]
+
+        """
+        print("\n", "#"*50, "\n", "#"*50, "\n")
+        loss, acc = self.model.evaluate(self.test_ds, test_labels, verbose=2)
+        print(f"Accuracy: {acc*100:.2f}%")
+        print(self.model.predict(self.test_ds).shape)"""
+        
+        #save model
+        print("\n", "#"*50, "\n", "#"*50, "\n")
+        if "y" == input("Save model? [y/n]"):
+            name = input("Please enter model name: ")
+            self.model.save(base + f"{name}.keras")
+            
+        print("\n", "#"*50, "\n", "#"*50, "\n")

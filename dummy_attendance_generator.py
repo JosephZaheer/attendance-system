@@ -1,10 +1,11 @@
 import pandas as pd
 import random as rn
+import os
 
 data = {
     
     "roll": (1,2,3,4,5,6),
-    "name": ("Aryan Vishwakarma", "Arush", "Jaffar", "Krishna V Gupta", "Yusuf Zaheer", "Zoheb Arsh")}
+    "name": ("Aryan", "Arush", "Jaffar", "Krishna", "Yusuf", "Zoheb Arsh")}
     
 months = ["January", "February", "March", "April", "May", "June", "July","August", "September", "October", "November", "December"]
 
@@ -25,4 +26,9 @@ for month in months:
         data[i] = tuple(l)
     
     df = pd.DataFrame(data)
-    df.to_csv(f"attendance_system/attendance_{year}/attendance_{month}.csv", index=False)
+
+
+    if not os.path.isdir(f"/workspaces/attendance-system/attendance_system/attendance_dataset/attendance_{year}"):
+        os.mkdir(f"/workspaces/attendance-system/attendance_system/attendance_dataset/attendance_{year}")
+
+    df.to_csv(f"/workspaces/attendance-system/attendance_system/attendance_dataset/attendance_{year}/attendance_{month}.csv", index=False)
