@@ -4,12 +4,19 @@ import pandas as pd
 import pickle
 import csv
 
+from pathlib import Path
+
+BASE_DIR = Path(__file__).resolve().parent
+print("#"*50)
+print(BASE_DIR)
+print("#"*50)
+
 month_names = ["January", "February", "March", "April", "May", "June",
                "July", "August", "September", "October", "November", "December"]
 
 register_path = "sample_register.csv"
 
-with open("years.dat", "rb") as f:
+with open("attendance_system/years.dat", "rb") as f:
     year_list = pickle.load(f)
 
 def view_attendance(month, year):
