@@ -9,7 +9,7 @@ month_names = ["January", "February", "March", "April", "May", "June",
 
 register_path = "/workspaces/attendance-system/attendance_system/sample_register.csv"
 
-with open("/workspaces/attendance-system/attendance_system/year_list.dat", "rb") as f:
+with open("/workspaces/attendance-system/attendance_system/years.dat", "rb") as f:
     year_list = pickle.load(f)
 
 def view_attendance(month, year):

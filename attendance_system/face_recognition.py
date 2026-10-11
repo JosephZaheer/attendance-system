@@ -80,7 +80,7 @@ def mark_attendance(img, model):
         if not path.exists():
             path.mkdir(parents=True, exist_ok=True)
 
-            with open("/workspaces/attendance-system/attendance_system/year_list.dat", "rb+") as f:
+            with open("/workspaces/attendance-system/attendance_system/years.dat", "rb+") as f:
                 years = pickle.load(f)
                 years.append(year)
                 pickle.dump(years, f)
