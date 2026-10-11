@@ -7,9 +7,9 @@ import csv
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent
-print("#"*50)
-print(BASE_DIR)
-print("#"*50)
+st.write("#"*50)
+st.write(BASE_DIR)
+st.write("#"*50)
 
 month_names = ["January", "February", "March", "April", "May", "June",
                "July", "August", "September", "October", "November", "December"]
