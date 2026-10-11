@@ -1,4 +1,4 @@
-from tensorflow.keras.layers import Conv2D, MaxPool2D, Flatten, Dense, BatchNormalization, Dropout
+from tensorflow.keras import layers
 import matplotlib.pyplot as plt
 from tensorflow import keras
 import tensorflow as tf
@@ -10,12 +10,12 @@ class ModelMaker:
     def load_model(self, name):
         self.model = keras.models.load_model(f'{name}.keras')
 
-    def load_local_dataset(self):
+    def load_local_dataset(self, img_size=(128, 128)):
         self.train_ds = tf.keras.utils.image_dataset_from_directory(
         "/workspaces/attendance-system/attendance_system/Dataset/Train",
         labels="inferred",
         label_mode="int",
-        image_size=(128, 128),
+        image_size=img_size,
         batch_size=16,
         shuffle=True
         )
@@ -24,48 +24,55 @@ class ModelMaker:
         "/workspaces/attendance-system/attendance_system/Dataset/Test",
         labels="inferred",
         label_mode="int",
-        image_size=(128,128),
+        image_size=img_size,
         batch_size=16,
         shuffle=False
         )
 
-    def create_model(self):
+    def transfer_learning(self, img_size=(128, 128, 3)):
+        self.base = tf.keras.applications.EfficientNetV2B3(
+            include_top=True,
+            weights='imagenet',
+            input_shape=img_size
+        )
+
+        self.base.trainable = False
+
+    def create_model(self, output, img_size=(128, 128, 3), optimizer="adam", loss="sparse_categorical_crossentropy", metrics=["accuracy"]):
         self.model = keras.Sequential([
-                    
-            Conv2D(filters=16, kernel_size=3, strides=1, padding="same", activation="relu", input_shape=(128, 128, 3)),
-            BatchNormalization(),
-            MaxPool2D(pool_size=3, strides=1, padding="same"),
+
+            layers.Input(shape=img_size),
+            layers.Rescaling(1./255),
+                                
+            layers.Conv2D(filters=16, kernel_size=3, padding="same", activation="relu"),
+            layers.BatchNormalization(),
+            layers.MaxPool2D(pool_size=2, strides=2),
+        
+            layers.Conv2D(filters=32, kernel_size=3, padding="same", activation="relu"),
+            layers.BatchNormalization(),
+            layers.MaxPool2D(pool_size=2, strides=2),
             
-            Conv2D(filters=22, kernel_size=1, strides=1, padding="same", activation="relu"),
-            BatchNormalization(),
-            MaxPool2D(pool_size=3, strides=2, padding="same"),
+            layers.Conv2D(filters=48, kernel_size=3, padding="same", activation="relu"),        
+            layers.BatchNormalization(),
+            layers.MaxPool2D(pool_size=2, strides=2),
             
-            Conv2D(filters=26, kernel_size=3, padding="same", activation="relu"),        
-            BatchNormalization(),
-            MaxPool2D(pool_size=3, strides=2, padding="same"),
+            layers.Flatten(),
             
-            Flatten(),
-                    
-            Dropout(rate=0.4),
-            Dense(units=32, activation="relu"),
-            BatchNormalization(),
+            layers.Dense(units=125, activation="relu"),
+            layers.BatchNormalization(),
             
-            Dropout(rate=0.4),
-            Dense(units=3, activation="sigmoid")
+            layers.Dense(units=output, activation="softmax")
         ])
     
         self.model.summary()
-        
-        #defining how the model evaluates its inaccuracy and how it improves itself
+
         self.model.compile(
-            optimizer="adam",
-            loss="sparse_categorical_crossentropy",
-            metrics=["accuracy"]
+            optimizer=optimizer,
+            loss=loss,
+            metrics=metrics
         )
         
-    def train_model(self, batch_size=16, epochs=15, patience=10):
-        
-        #define early stopping to avoid overfitting
+    def train_model(self, batch_size=16, epochs=20, patience=10):
         early_stop = keras.callbacks.EarlyStopping(
             min_delta=0.005,
             patience=patience,
@@ -73,8 +80,6 @@ class ModelMaker:
             verbose=1
         )
     
-        #train model on training dataset
-        #test model on validation dataset
         self.history = self.model.fit(
             self.train_ds,
             validation_data=self.val_ds,            
@@ -85,7 +90,6 @@ class ModelMaker:
         )
         
     def loss_accuracy(self):
-        #plot tarining results for model evaluation
         figure, axes = plt.subplots(1,2)
         
         axes[0].plot(self.history.history["loss"], label="Training Loss")
@@ -107,11 +111,6 @@ class ModelMaker:
         plt.tight_layout()
         plt.show()
         plt.savefig("model_loss_accuracy.png")
-        
-        #evaluate model performance using test dataset
-        #loss, accuracy = self.model.evaluate(self.test_ds)
-        #print(f"This model has {accuracy*100:.2f}% accuracy")
          
     def save_model(self, name):
-        #save the model to avoid training over and over again
-        self.model.save(f"{name}.keras")
+        self.model.save(f"/workspaces/attendance-system/attendance_system/{name}.keras")

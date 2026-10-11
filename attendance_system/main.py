@@ -1,19 +1,22 @@
-from streamlit_image_select import image_select 
 import face_recognition as fr
 import streamlit as st
 import pandas as pd
+import pickle
 import csv
 
 month_names = ["January", "February", "March", "April", "May", "June",
                "July", "August", "September", "October", "November", "December"]
 
-year_list = pd.read_json("attendance_system/year_list.json")
+register_path = "/workspaces/attendance-system/attendance_system/sample_register.csv"
+
+with open("/workspaces/attendance-system/attendance_system/year_list.dat", "rb") as f:
+    year_list = pickle.load(f)
 
 def view_attendance(month, year):
-    filepath = f"attendance_system/attendance_dataset/attendance_{year}/attendance_{month}.csv"
+    data_path = f"/workspaces/attendance-system/attendance_system/attendance_dataset/attendance_{year}/attendance_{month}.csv"
 
     try:
-        register = pd.read_csv(filepath)
+        register = pd.read_csv(data_path)
                             
     except FileNotFoundError:
         st.write(f"No records available for {month} {year}")
@@ -21,26 +24,22 @@ def view_attendance(month, year):
 
     date = st.slider("Specify a date: (0 for whole month)", min_value=0, max_value=31, step=1)
 
-    if date < 10:
-        date = "0" + str(date).strip(" 0")
-
-    else:
-        date = str(date)
-
-    if date == "0":
+    if date == 0:
         columns = list(register.columns)
 
     else:
-        if date in register.columns:
-            columns = ["roll", "name", date]
+        if str(date) in register.columns:
+            columns = ["roll", "name", str(date)]
 
         else:
             st.write(f"Attendance not availabe for this date: {date}")
             return None
 
     register = register[columns]
+    register = register.set_index(register["roll"])
+    register = register.drop("roll", axis=1)
     st.dataframe(register)
-    
+
 def percentage():    
     options = [
         "Range of months",
@@ -49,10 +48,9 @@ def percentage():
         ]
 
     choice = st.selectbox("Choose an option:", options)
-
     year = st.selectbox("Select a year:", year_list)
 
-    if choice == options[0]:
+    if choice == options[0]: #range of months
         start_month = st.selectbox("Select starting month:", month_names, key="month1")
         start = month_names.index(start_month)
 
@@ -61,22 +59,22 @@ def percentage():
 
         months_list = [month for month in month_names[start:stop]]
 
-    elif choice == options[1]:
+    elif choice == options[1]: #whole year
         months_list = month_names
 
-    else:
+    else: #one specific month
         month = st.selectbox("Select a month:", month_names, key="month3")
         months_list = [month]
 
-    students = pd.read_csv("attendance_system/sample_register.csv")
+    students = pd.read_csv(register_path)
     students["Total"] = ""
     working_days = 0
                 
     for month in months_list:
-        filepath = f"attendance_system/attendance_dataset/attendance_{year}/attendance_{month}.csv"
+        data_path = f"/workspaces/attendance-system/attendance_system/attendance_dataset/attendance_{year}/attendance_{month}.csv"
                     
         try:
-            register = pd.read_csv(filepath)
+            register = pd.read_csv(data_path)
                         
         except FileNotFoundError:
             continue
@@ -87,7 +85,7 @@ def percentage():
         for column in register.columns[2:]:
             students["Total"] += register[column]
             
-    #total_sum.loc[idx, "sum"] = "APAPPPAPAA..."
+    #students.loc[idx, "Total"] = "APAPPPAPAA..."
     #We can get total attendance for this student by counting number of 'P' (Present marking)
 
     for idx, row in enumerate(students["Total"]):
@@ -95,36 +93,38 @@ def percentage():
         students.loc[idx, "%"] = f"{row.count('P') * 100 / working_days:.0f}%"
 
     st.write(f"Working days: {working_days}")
+    students = students.set_index(students["roll"])
+    students = students.drop("roll", axis=1)
     st.dataframe(students)
 
 def register_student(input_name, input_roll):
     input_name = input_name.title().strip()
 
-    #check if name and roll are valid
-    valid_name = input_name.replace(" ", "").isalpha()
-
-    if not valid_name:
+    #check if name is valid
+    if not input_name.replace(" ", "").isalpha():
             st.write("Invalid Input")
             return None
 
-    names_register = pd.read_csv("attendance_system/sample_register.csv")
-    names_list = list(names_register["name"])
+    register = pd.read_csv(register_path)
+    names_list = list(register["name"])
 
     #roll = index + 1
-    if input_roll in names_register["roll"] and input_name == names_list[input_roll - 1]:
+    if input_roll in register["roll"] and input_name == names_list[input_roll - 1]:
         st.write("Student already registered!")
         return None
 
     records = []
     for i in range(len(names_list)):
-        roll = int(names_register.iloc[i, 0])
-        name = names_register.iloc[i, 1]
+        roll = int(register.iloc[i, 0])
+        name = register.iloc[i, 1]
         records.append((roll, name))
 
+    #records = [(roll, name), (roll, name), (roll, name), ...]
+    #by sorting, all records are arranged sequentially according to the roll numbers
     records.append((int(input_roll), input_name))
     records.sort()
 
-    with open("attendance_system/sample_register.csv", "w") as file:
+    with open(register_path, "w") as file:
         writer = csv.writer(file)
         writer.writerow(["roll", "name"])
                     
@@ -132,25 +132,13 @@ def register_student(input_name, input_roll):
             writer.writerow([roll, name.title()])
 
     st.write("Registration Successful!")
-    names_register = pd.read_csv("attendance_system/sample_register.csv")
-    st.dataframe(names_register)
+    register = pd.read_csv(register_path)
+    register = register.set_index(register["roll"])
+    register = register.drop("roll", axis=1)
+    st.dataframe(register)
                             
-def remove_student(name_or_roll):
-    names = pd.read_csv("attendance_system/sample_register.csv")
-        
-    #Check if input is a name or a roll
-    if name_or_roll.isdigit():# and int(name_or_roll) in tuple(names["roll"]):
-        name_or_roll = int(name_or_roll)
-        index_remove = list(names[names["roll"] == name_or_roll].index)[0]
-                
-    elif name_or_roll.replace(" ", "").isalpha():# and name_or_roll in tuple(names["name"]):                
-        index_remove = list(names[names["name"] == name_or_roll].index)[0]
-                
-    else:
-        st.write("Invalid Input")
-        return None
-                
-    file = open("attendance_system/sample_register.csv", "w")
+def remove_student(index_remove):
+    file = open(register_path, "w")
     writer = csv.writer(file)
     writer.writerow(["roll", "name"])
 
@@ -168,13 +156,16 @@ def remove_student(name_or_roll):
     file.close()
 
     st.write("Deletion Successful!")
-    names_register = pd.read_csv("attendance_system/sample_register.csv")
+    names_register = pd.read_csv(register_path)
+    names_register = names_register.set_index(names_register["roll"])
+    names_register = names_register.drop("roll", axis=1)
     st.dataframe(names_register)
 
 #_______________STREAMLIT MENU_______________
 
 st.title("AI ATTENDANCE SYSTEM")
 options = [
+    "Home",
     "Mark Attendance",
     "View Attendance Register",
     "View Total Attendance",
@@ -182,35 +173,55 @@ options = [
     "Remove Student"
     ]
 
-images = [
+status = st.sidebar.radio("Choose an operation:", options, key="Options")
 
-    "/workspaces/attendance-system/attendance_system/Dataset/Train/Aryan/Zoheb16.jpg",
-    "/workspaces/attendance-system/attendance_system/Dataset/Train/Jaffar/Jaffar16.jpg",
-    "/workspaces/attendance-system/attendance_system/Dataset/Train/Zoheb/Zoheb12.jpg"]
+if status == options[0]:
+    st.write("""Welcome to The Attendance System
 
-status = st.radio("Choose an operation:", options, key="Options")
+    Purpose:
 
-if status == options[0]: #mark attendance
+    The project aims to provide a way for teachers to mark attendance through an automatic AI based system,
+    this reduces the responsibilities of the teacher and gives them more room to breathe before classes began.
+
+    Working:
+
+    - Images are collected on which classification is done, the collection is through streamlit's camera_input()
+    - Some preprocessing is done before classification to improve accuracy.
+    - Before the classification, the images are cropped to only include the faces and not uneccessary background details, this is done using Haar Cascade 
+    - The classification model to recognise the identity of students is a CNN model. It uses adam as the optimizer, sparse binary crossentropy for loss and has total ... parameters.
+    - Rest of the code, which offers extra features like viewing attendance register, attendance percentage, quickly registering and removing students is done through Panda's DataFrames.
+
+    Made by:
+    
+    - Arush (Data Expert)
+    - Aryan Vishwakarma (Video Producer)
+    - Jaffar (Information Researcher)
+    - Krishna V. Gupta (Communication Leader)
+    - Yusuf Zaheer (Main Coder)
+    - Zoheb Arsh (Web Designer)
+    """)
+
+
+elif status == options[1]: #mark attendance
     #student = image_select("Choose an image to classify: Aryan/Jaffar/Zoheb", images, captions=["Aryan", "Jaffar", "Zoheb"])
 
-    if  st.button("Mark Attendance"):
-        img = st.camera_input("Take a photo: ")
+    img = st.camera_input("Take a photo: ")
 
-        if img != None:
-            st.image(img)
-            fr.mark_attendance(img)
+    if img:
+        st.write("Capture successful!")
+        fr.mark_attendance(img, "model1")
             
-elif status == options[1]: #view attendance register for a specific date or month
+elif status == options[2]: #view attendance register for a specific date or month
     month = st.selectbox("Select a month:", month_names)
     year = st.selectbox("Select a year:", year_list)
 
     if month and year:
         view_attendance(month, year)
             
-elif status == options[2]: #view attendance total and percentage            
+elif status == options[3]: #view attendance total and percentage            
     percentage()
                 
-elif status == options[3]: #register a student
+elif status == options[4]: #register a student
     name = st.text_input("Enter student name:", key="Input03")
     name = name.strip().title()
 
@@ -220,12 +231,14 @@ elif status == options[3]: #register a student
     if name and roll and st.button("Register"):
         register_student(name, roll)
 
-elif status == options[4]: #remove a student
-    name_or_roll = st.text_input("Enter student name OR roll number:", key="Input05")
-    name_or_roll = name_or_roll.strip().title()
+elif status == options[5]: #remove a student
+    names = pd.read_csv(register_path)
+    names_list = list(names["name"])
+    name = st.selectbox("Select a student:", names_list)                
+    index_remove = names_list.index(name)
 
-    if name_or_roll and st.button("Delete"):
-        remove_student(name_or_roll)
+    if st.button("Delete"):
+        remove_student(index_remove)
 
 
             

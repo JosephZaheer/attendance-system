@@ -1,14 +1,11 @@
 {
-    "workbench.colorTheme": "Visual Studio Dark",
-    "chat.agent.maxRequests": 10,
-    "editor.defaultFormatter": "ms-python.debugpy",
-    "editor.fontSize": 14,
-    "editor.screenReaderAnnounceInlineSuggestion": false,
-    "github.copilot.chat.languageContext.typescript.enabled": false,
-    "python.defaultInterpreterPath": "/home/codespace/.python/current/bin/python3",
-    "github.copilot.chat.newWorkspaceCreation.enabled": false,
-    "python.analysis.extraPaths": [
-        "./attendance_system"
-    ],
-    "python-envs.defaultEnvManager": "ms-python.python:system"
+    "editor.inlineSuggest.enabled": false,
+    "github.copilot.enable": {
+        "*": true,
+        "yaml": false,
+        "plaintext": false,
+        "markdown": true,
+        "javascript": true,
+        "python": false
+    }
 }
