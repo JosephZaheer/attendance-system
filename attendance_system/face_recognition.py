@@ -10,7 +10,7 @@ import time
 def read_img(img):
     import tensorflow as tf
 
-    filepath = "/workspaces/attendance-system/attendance_system/predict.jpg"
+    filepath = "/mount/src/attendance-system/attendance_system/predict.jpg"
     with open(filepath, "wb") as f:
         f.write(img.getbuffer())
 
@@ -24,7 +24,7 @@ def camera_capture(folder, camera_index=0):
     capture = cv2.VideoCapture(camera_index)
     count = 0
 
-    haar_cascade = cv2.CascadeClassifier("attendance_system/haarcascade_frontalface_default.xml")
+    haar_cascade = cv2.CascadeClassifier("/mount/src/attendance-system/attendance_system/haarcascade_frontalface_default.xml")
 
     while True:
         success, frame = capture.read()
@@ -58,10 +58,10 @@ def camera_capture(folder, camera_index=0):
             print("Progress: ", count)
 
             if count%3 == 0:
-                cv2.imwrite(f"/workspaces/attendance-system/attendance_system/Dataset/Train/{folder}/{count}.jpg", cropped)
+                cv2.imwrite(f"/mount/src/attendance-system/attendance_system/Dataset/Train/{folder}/{count}.jpg", cropped)
 
             elif count%5 == 0:
-                cv2.imwrite(f"/workspaces/attendance-system/attendance_system/Dataset/Test/{folder}/{count}.jpg", cropped)
+                cv2.imwrite(f"/mount/src/attendance-system/attendance_system/Dataset/Test/{folder}/{count}.jpg", cropped)
 
     capture.release()
     #cv2.destroyAllWindows()
@@ -71,7 +71,7 @@ def mark_attendance(img, model):
 
     date, month, year = time.strftime("%d %B %Y").split()
     
-    path = pt.Path(f"/workspaces/attendance-system/attendance_system/attendance_dataset/attendance_{year}")
+    path = pt.Path(f"/mount/src/attendance-system/attendance_system/attendance_dataset/attendance_{year}")
 
     try:
         register = pd.read_csv(path / f"attendance_{month}.csv")
@@ -80,18 +80,18 @@ def mark_attendance(img, model):
         if not path.exists():
             path.mkdir(parents=True, exist_ok=True)
 
-            with open("/workspaces/attendance-system/attendance_system/year_list.dat", "rb+") as f:
+            with open("/mount/src/attendance-system/attendance_system/years.dat", "rb+") as f:
                 years = pickle.load(f)
                 years.append(year)
                 pickle.dump(years, f)
 
-        register = pd.read_csv("/workspaces/attendance-system/attendance_system/sample_register.csv")
+        register = pd.read_csv("/mount/src/attendance-system/attendance_system/sample_register.csv")
   
     if not date in register.columns:
         register.loc[:, date] = "A"
 
 
-    model = tf.keras.models.load_model(f"/workspaces/attendance-system/attendance_system/{model}.keras")
+    model = tf.keras.models.load_model(f"/mount/src/attendance-system/attendance_system/{model}.keras")
 
     img_array = read_img(img)
 
