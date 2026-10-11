@@ -7,13 +7,13 @@ import csv
 month_names = ["January", "February", "March", "April", "May", "June",
                "July", "August", "September", "October", "November", "December"]
 
-register_path = "/workspaces/attendance-system/attendance_system/sample_register.csv"
+register_path = "sample_register.csv"
 
-with open("/workspaces/attendance-system/attendance_system/years.dat", "rb") as f:
+with open("years.dat", "rb") as f:
     year_list = pickle.load(f)
 
 def view_attendance(month, year):
-    data_path = f"/workspaces/attendance-system/attendance_system/attendance_dataset/attendance_{year}/attendance_{month}.csv"
+    data_path = f"/attendance_dataset/attendance_{year}/attendance_{month}.csv"
 
     try:
         register = pd.read_csv(data_path)
@@ -71,7 +71,7 @@ def percentage():
     working_days = 0
                 
     for month in months_list:
-        data_path = f"/workspaces/attendance-system/attendance_system/attendance_dataset/attendance_{year}/attendance_{month}.csv"
+        data_path = f"/attendance_dataset/attendance_{year}/attendance_{month}.csv"
                     
         try:
             register = pd.read_csv(data_path)
