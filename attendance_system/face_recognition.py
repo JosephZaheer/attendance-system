@@ -91,7 +91,7 @@ def mark_attendance(img, model):
         register.loc[:, date] = "A"
 
 
-    model = tf.keras.models.load_model(f"{model}.keras")
+    model = tf.keras.models.load_model(f"/mount/src/attendance-system/attendance_system/{model}.keras")
 
     img_array = read_img(img)
 
