@@ -5,11 +5,13 @@ import os
 data = {
     
     "roll": (1,2,3,4,5,6),
-    "name": ("Aryan", "Arush", "Jaffar", "Krishna", "Yusuf", "Zoheb Arsh")}
+    "name": ("Aryan", "Arush", "Jaffar", "Krishna", "Yusuf", "Zoheb")}
     
 months = ["January", "February", "March", "April", "May", "June", "July","August", "September", "October", "November", "December"]
 
-year = 2026
+year = 2025
+standard = 12
+section = "A"
 
 for month in months:
     for i in range(1, 30):
@@ -28,7 +30,7 @@ for month in months:
     df = pd.DataFrame(data)
 
 
-    if not os.path.isdir(f"/workspaces/attendance-system/attendance_system/attendance_dataset/attendance_{year}"):
-        os.mkdir(f"/workspaces/attendance-system/attendance_system/attendance_dataset/attendance_{year}")
+    if not os.path.isdir(f"/workspaces/attendance-system/database/{standard}/{section}/records/{year}"):
+        os.mkdir(f"/workspaces/attendance-system/database/{standard}/{section}/records/{year}")
 
-    df.to_csv(f"/workspaces/attendance-system/attendance_system/attendance_dataset/attendance_{year}/attendance_{month}.csv", index=False)
+    df.to_csv(f"/workspaces/attendance-system/database/{standard}/{section}/records/{year}/{month}.csv", index=False)

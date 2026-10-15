@@ -48,7 +48,7 @@ class ModelMaker:
             layers.RandomContrast(factor=0.1),
                                 
             #1st convolutional layer
-            layers.Conv2D(filters=32, kernel_size=3, strides=1, activation="relu"),
+            layers.Conv2D(filters=16, kernel_size=3, strides=1, activation="relu"),
             layers.MaxPool2D(pool_size=2, padding="same"),
             layers.BatchNormalization(),
         
@@ -63,7 +63,7 @@ class ModelMaker:
             layers.BatchNormalization(),
             
             #4th convolutional layer
-            layers.Conv2D(filters=48, kernel_size=1, strides=1, activation="relu"),
+            layers.Conv2D(filters=64, kernel_size=1, strides=1, activation="relu"),
             layers.BatchNormalization(),
             
             layers.Flatten(),
@@ -71,7 +71,7 @@ class ModelMaker:
             
             #dense layers
             layers.Dense(units=128, activation="relu"),
-            layers.Dense(units=128, activation="relu"),
+            layers.Dense(units=192, activation="relu"),
             
             layers.Dense(units=output, activation="softmax")
         ])

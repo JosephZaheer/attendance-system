@@ -6,16 +6,24 @@ import time
 import cv2
 import os
 
-#base = "/mount/src/attendance-system/attendance_system/"
-base = "/workspaces/attendance-system/attendance_system/"
-
+base = None
 IMG_SIZE = 224
 
-def camera_capture(name, camera_index=0):        
+def initialise(base_from_main):
+    global base
+    base = base_from_main
+
+def camera_capture(name, camera_index):        
     capture = cv2.VideoCapture(camera_index)
     count = 0
 
-    haar_cascade = cv2.CascadeClassifier(base + "haarcascade_frontalface_default.xml")
+    if base.startswith("/mount"):
+        haar_filepath = "/mount/src/attendance-system/haarcascade_frontalface_default.xml"
+
+    else:
+        haar_filepath = "/workspaces/attendance-system/haarcascade_frontalface_default.xml"
+
+    haar_cascade = cv2.CascadeClassifier(haar_filepath)
 
     while True:
         success, frame = capture.read()
@@ -40,18 +48,17 @@ def camera_capture(name, camera_index=0):
                 rotation_matrix = cv2.getRotationMatrix2D((width/2,height/2), angle, 1)
                 cropped = cv2.warpAffine(cropped, rotation_matrix, (width, height))
 
-            blurred = cv2.GaussianBlur(cropped, (1,1), cv2.BORDER_DEFAULT)
-            grey = cv2.cvtColor(blurred, cv2.COLOR_BGR2GRAY)
+            #blurred = cv2.GaussianBlur(cropped, (1,1), cv2.BORDER_DEFAULT)
+            grey = cv2.cvtColor(grey, cv2.COLOR_BGR2GRAY)
             equal = cv2.equalizeHist(grey)
             
-            print("Progress: ", count)
-
             if count%3 == 0:
-                cv2.imwrite(base + f"Dataset/Train/{name}/{count}.jpg", grey)
+                cv2.imwrite(base + f"Dataset/Train/{name}/{count}.jpg", equal)
 
             elif count%5 == 0:
-                cv2.imwrite(base + f"Dataset/Test/{name}/{count}.jpg", grey)
-
+                print("Progress: ", count)
+                cv2.imwrite(base + f"Dataset/Test/{name}/{count}.jpg", equal)
+            
     capture.release()
     #cv2.destroyAllWindows()
 
@@ -61,11 +68,11 @@ def mark_attendance(model):
     date, month, year = time.strftime("%d %B %Y").split()
 
     try:
-        register = pd.read_csv(base + f"attendance_dataset/attendance_{year}/attendance_{month}.csv")
+        register = pd.read_csv(base + f"records/{year}/{month}.csv")
 
     except FileNotFoundError:
-        if not os.path.exists(base + f"attendance_dataset/attendance_{year}"):
-            os.mkdir(base + f"attendance_dataset/attendance_{year}")
+        if not os.path.exists(base + f"records/{year}"):
+            os.mkdir(base + f"records/{year}")
 
         register = pd.read_csv(base + "sample_register.csv")
   
@@ -96,13 +103,14 @@ def mark_attendance(model):
     print("\n", "#"*50, "\n", "#"*50, "\n")
     print("Predicted Student:", student)
     print(f"Confidence: {100*np.max(score):.2f}%")
+    print("score:", score)
     print("\n", "#"*50, "\n", "#"*50, "\n")
 
     student_rolls = list(register.index)
     idx = student_rolls[np.argmax(score)] 
 
     register.loc[idx, date] = "P"            
-    register.to_csv(base + f"attendance_dataset/attendance_{year}/attendance_{month}.csv", index=False)
+    register.to_csv(base + f"records/{year}/{month}.csv", index=False)
 
     st.table(register)
     
