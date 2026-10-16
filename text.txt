@@ -11,12 +11,9 @@ print("end")
 
 #model.loss_accuracy()
 #streamlit run /workspaces/attendance-system/attendance_system/main.py
-/workspaces/attendance-system/attendance_system/Dataset/Test
+/workspaces/attendance-system/database
 /home/codespace/.python/current/bin/python3 /workspaces/attendance-system/attendance_system/model_maker.py
 
-
-
-
 python3 attendance_system/test.py
-streamlit run /workspaces/attendance-system/attendance_system/main.py
+streamlit run /workspaces/attendance-system/attendance_system/app.py
 
